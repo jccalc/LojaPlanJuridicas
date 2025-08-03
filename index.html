@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JuriCalc - Planilhas Judiciais Profissionais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.24/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --dark-green: #059669;
+            --light-green: #34d399;
+            --dark-bg: #0f172a;
+            --darker-bg: #020617;
+            --card-bg: #1e293b;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #059669 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+            background-color: var(--card-bg);
+            border: 1px solid #334155;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.2), 0 10px 10px -5px rgba(16, 185, 129, 0.1);
+            border-color: var(--primary-green);
+        }
+        
+        .admin-panel {
+            background-color: var(--darker-bg);
+            border: 1px solid #334155;
+        }
+        
+        .green-text { color: var(--primary-green); }
+        .green-bg { background-color: var(--primary-green); }
+        .green-border { border-color: var(--primary-green); }
+        
+        .navbar-custom {
+            background-color: var(--darker-bg);
+            border-bottom: 1px solid #334155;
+        }
+        
+        .footer-custom {
+            background-color: var(--darker-bg);
+            border-top: 1px solid #334155;
+        }
+        
+        .modal-custom {
+            background-color: var(--card-bg);
+            border: 1px solid #334155;
+        }
+        
+        .input-custom {
+            background-color: var(--card-bg);
+            border-color: #475569;
+            color: white;
+        }
+        
+        .input-custom:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Admin Toggle Button -->
+    <div class="fixed top-20 right-4 z-50">
+        <button onclick="toggleAdminPanel()" class="btn btn-sm green-bg text-white hover:bg-green-600">
+            <i class="fas fa-cog mr-1"></i>
+            Admin
+        </button>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="fixed top-0 right-0 h-full w-96 admin-panel transform translate-x-full transition-transform duration-300 z-40 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold green-text">Painel Administrativo</h2>
+                <button onclick="toggleAdminPanel()" class="btn btn-sm btn-circle">✕</button>
+            </div>
+            
+            <!-- Seções Editáveis -->
+            <div class="space-y-6">
+                <div class="card admin-panel p-4">
+                    <h3 class="font-bold mb-3 green-text">Seção Hero</h3>
+                    <input type="text" id="hero-title" placeholder="Título Principal" class="input input-sm w-full mb-2 input-custom">
+                    <textarea id="hero-subtitle" placeholder="Subtítulo" class="textarea textarea-sm w-full input-custom"></textarea>
+                    <button onclick="updateHeroSection()" class="btn btn-sm green-bg text-white mt-2">Atualizar</button>
+                </div>
+                
+                <div class="card admin-panel p-4">
+                    <h3 class="font-bold mb-3 green-text">Produtos</h3>
+                    <button onclick="openProductModal()" class="btn btn-sm green-bg text-white mb-3">
+                        <i class="fas fa-plus mr-1"></i>
+                        Novo Produto
+                    </button>
+                    <div id="admin-products-list" class="space-y-2">
+                        <!-- Lista de produtos será carregada aqui -->
+                    </div>
+                </div>
+                
+                <div class="card admin-panel p-4">
+                    <h3 class="font-bold mb-3 green-text">Configurações Gerais</h3>
+                    <input type="text" id="site-name" placeholder="Nome do Site" class="input input-sm w-full mb-2 input-custom">
+                    <input type="text" id="contact-email" placeholder="Email de Contato" class="input input-sm w-full mb-2 input-custom">
+                    <input type="text" id="contact-phone" placeholder="Telefone" class="input input-sm w-full input-custom">
+                    <button onclick="updateSiteConfig()" class="btn btn-sm green-bg text-white mt-2">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <dialog id="product_modal" class="modal">
+        <div class="modal-box modal-custom w-11/12 max-w-2xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white">✕</button>
+            </form>
+            <h3 class="font-bold text-lg mb-4 green-text">Gerenciar Produto</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Nome do Produto</span>
+                    </label>
+                    <input type="text" id="product-name" class="input w-full input-custom">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Preço (R$)</span>
+                    </label>
+                    <input type="number" id="product-price" step="0.01" class="input w-full input-custom">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Preço Original (R$)</span>
+                    </label>
+                    <input type="number" id="product-original-price" step="0.01" class="input w-full input-custom">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Cor do Ícone</span>
+                    </label>
+                    <select id="product-color" class="select w-full input-custom">
+                        <option value="blue">Azul</option>
+                        <option value="green">Verde</option>
+                        <option value="purple">Roxo</option>
+                        <option value="red">Vermelho</option>
+                        <option value="yellow">Amarelo</option>
+                        <option value="indigo">Índigo</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Ícone (Font Awesome)</span>
+                    </label>
+                    <input type="text" id="product-icon" placeholder="fas fa-briefcase" class="input w-full input-custom">
+                </div>
+                
+                <div>
+                    <label class="label">
+                        <span class="label-text text-white">Imagem do Produto</span>
+                    </label>
+                    <input type="file" id="product-image-file" accept="image/*" class="file-input file-input-bordered w-full input-custom" onchange="handleImageUpload(this)">
+                    <input type="url" id="product-image" placeholder="https://exemplo.com/imagem.jpg" class="input w-full input-custom mt-2" style="display: none;">
+                    <div id="image-preview" class="mt-2 hidden">
+                        <img id="preview-img" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-500">
+                        <button type="button" onclick="removeImage()" class="btn btn-sm btn-error mt-2">
+                            <i class="fas fa-trash mr-1"></i>
+                            Remover
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="label">
+                        <span class="label-text text-white">Descrição</span>
+                    </label>
+                    <textarea id="product-description" class="textarea w-full input-custom" rows="3"></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-action">
+                <button onclick="deleteProduct()" class="btn btn-error" id="delete-product-btn" style="display: none;">
+                    <i class="fas fa-trash mr-2"></i>
+                    Excluir
+                </button>
+                <button onclick="saveProduct()" class="btn green-bg text-white">
+                    <i class="fas fa-save mr-2"></i>
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Navbar -->
+    <div class="navbar navbar-custom shadow-lg sticky top-0 z-30">
+        <div class="navbar-start">
+            <div class="dropdown">
+                <div tabindex="0" role="button" class="btn btn-ghost lg:hidden text-white">
+                    <i class="fas fa-bars text-xl"></i>
+                </div>
+                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow admin-panel rounded-box w-52">
+                    <li><a href="#home" class="text-white hover:text-green-400">Início</a></li>
+                    <li><a href="#produtos" class="text-white hover:text-green-400">Produtos</a></li>
+                    <li><a href="#sobre" class="text-white hover:text-green-400">Sobre</a></li>
+                    <li><a href="#contato" class="text-white hover:text-green-400">Contato</a></li>
+                </ul>
+            </div>
+            <a class="btn btn-ghost text-xl font-bold green-text">
+                <i class="fas fa-calculator mr-2"></i>
+                <span id="site-title">JuriCalc</span>
+            </a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1">
+                <li><a href="#home" class="text-white hover:text-green-400">Início</a></li>
+                <li><a href="#produtos" class="text-white hover:text-green-400">Produtos</a></li>
+                <li><a href="#sobre" class="text-white hover:text-green-400">Sobre</a></li>
+                <li><a href="#contato" class="text-white hover:text-green-400">Contato</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end">
+            <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle text-white">
+                    <div class="indicator">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="badge badge-sm indicator-item green-bg text-white" id="cart-count">0</span>
+                    </div>
+                </div>
+                <div tabindex="0" class="mt-3 z-[1] card card-compact dropdown-content w-52 admin-panel shadow border border-gray-600">
+                    <div class="card-body">
+                        <span class="font-bold text-lg text-white">Carrinho</span>
+                        <span class="green-text" id="cart-items">0 itens</span>
+                        <div class="card-actions">
+                            <button class="btn green-bg text-white btn-block" onclick="openCartModal()">Ver Carrinho</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn green-bg text-white ml-2 hover:bg-green-600">
+                <i class="fas fa-user mr-2"></i>
+                Login
+            </button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero min-h-screen hero-gradient">
+        <div class="hero-content text-center text-white">
+            <div class="max-w-4xl">
+                <h1 id="hero-main-title" class="text-5xl font-bold mb-6">
+                    Planilhas Judiciais Profissionais
+                </h1>
+                <p id="hero-main-subtitle" class="text-xl mb-8 opacity-90">
+                    Automatize seus cálculos jurídicos com nossas planilhas Excel especializadas. 
+                    Precisão, agilidade e conformidade legal em cada fórmula.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="btn btn-lg green-bg text-white font-bold hover:bg-green-600 border-none">
+                        <i class="fas fa-download mr-2"></i>
+                        Ver Produtos
+                    </button>
+                    <button class="btn btn-lg btn-outline text-gray-100 border-white hover:bg-white hover:text-slate-900 font-bold">
+                        <i class="fas fa-play mr-2"></i>
+                        Demo Gratuita
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20" style="background-color: var(--darker-bg);">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 text-white">Por que escolher nossas planilhas?</h2>
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+                    Desenvolvidas por especialistas em direito e tecnologia para garantir máxima precisão
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body text-center">
+                        <div class="text-4xl green-text mb-4">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="card-title justify-center mb-4 text-white">Conformidade Legal</h3>
+                        <p class="text-gray-300">Todas as fórmulas seguem rigorosamente a legislação vigente e jurisprudência atualizada.</p>
+                    </div>
+                </div>
+                
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body text-center">
+                        <div class="text-4xl green-text mb-4">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <h3 class="card-title justify-center mb-4 text-white">Agilidade</h3>
+                        <p class="text-gray-300">Reduza o tempo de cálculo de horas para minutos com nossas planilhas automatizadas.</p>
+                    </div>
+                </div>
+                
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body text-center">
+                        <div class="text-4xl green-text mb-4">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h3 class="card-title justify-center mb-4 text-white">Suporte Especializado</h3>
+                        <p class="text-gray-300">Conte com nossa equipe de especialistas para tirar dúvidas e fornecer atualizações.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section id="produtos" class="py-20" style="background-color: var(--dark-bg);">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 text-white">Nossos Produtos</h2>
+                <p class="text-lg text-gray-300">Planilhas especializadas para cada área do direito</p>
+            </div>
+            
+            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Produtos serão carregados dinamicamente aqui -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-20" style="background-color: var(--darker-bg);">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 text-white">O que nossos clientes dizem</h2>
+                <p class="text-lg text-gray-300">Depoimentos de profissionais que confiam em nossas planilhas</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full green-bg text-white flex items-center justify-center">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="font-bold text-white">Dr. João Silva</h4>
+                                <p class="text-sm text-gray-300">Advogado Trabalhista</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-300">
+                            "As planilhas da JuriCalc revolucionaram minha prática. O que antes levava horas, 
+                            agora faço em minutos com total precisão."
+                        </p>
+                        <div class="rating rating-sm mt-4">
+                            <input type="radio" name="rating-1" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-1" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-1" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-1" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-1" class="mask mask-star-2 bg-green-400" checked />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full green-bg text-white flex items-center justify-center">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="font-bold text-white">Dra. Maria Santos</h4>
+                                <p class="text-sm text-gray-300">Advogada Cível</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-300">
+                            "Excelente qualidade e suporte técnico impecável. Recomendo para todos os colegas 
+                            que buscam eficiência nos cálculos."
+                        </p>
+                        <div class="rating rating-sm mt-4">
+                            <input type="radio" name="rating-2" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-2" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-2" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-2" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-2" class="mask mask-star-2 bg-green-400" checked />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-hover shadow-xl">
+                    <div class="card-body">
+                        <div class="flex items-center mb-4">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full green-bg text-white flex items-center justify-center">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="font-bold text-white">Dr. Carlos Oliveira</h4>
+                                <p class="text-sm text-gray-300">Sócio - Escritório Oliveira & Associados</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-300">
+                            "Nosso escritório aumentou a produtividade em 300% após implementar as planilhas. 
+                            Investimento que se paga rapidamente."
+                        </p>
+                        <div class="rating rating-sm mt-4">
+                            <input type="radio" name="rating-3" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-3" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-3" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-3" class="mask mask-star-2 bg-green-400" checked />
+                            <input type="radio" name="rating-3" class="mask mask-star-2 bg-green-400" checked />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 green-bg text-white">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-6">Pronto para otimizar seus cálculos?</h2>
+            <p class="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+                Junte-se a mais de 5.000 advogados que já confiam em nossas planilhas para 
+                agilizar seus processos e aumentar a precisão dos cálculos.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="btn btn-lg bg-white text-green-600 hover:bg-gray-100 border-none">
+                    <i class="fas fa-download mr-2"></i>
+                    Baixar Demo Gratuita
+                </button>
+                <button class="btn btn-lg btn-outline text-white border-white hover:bg-white hover:text-green-600">
+                    <i class="fas fa-phone mr-2"></i>
+                    Falar com Consultor
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer p-10 footer-custom text-white">
+        <aside>
+            <div class="flex items-center mb-4">
+                <i class="fas fa-calculator text-2xl mr-2 green-text"></i>
+                <span class="text-xl font-bold">JuriCalc</span>
+            </div>
+            <p class="max-w-xs text-gray-300">
+                Especialistas em planilhas judiciais desde 2020. 
+                Precisão e agilidade para profissionais do direito.
+            </p>
+            <div class="flex gap-4 mt-4">
+                <a class="text-2xl hover:text-green-400"><i class="fab fa-facebook"></i></a>
+                <a class="text-2xl hover:text-green-400"><i class="fab fa-instagram"></i></a>
+                <a class="text-2xl hover:text-green-400"><i class="fab fa-linkedin"></i></a>
+                <a class="text-2xl hover:text-green-400"><i class="fab fa-youtube"></i></a>
+            </div>
+        </aside>
+        <nav>
+            <header class="footer-title green-text">Produtos</header>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Cálculos Trabalhistas</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Cálculos Cíveis</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Execução Fiscal</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Direito de Família</a>
+        </nav>
+        <nav>
+            <header class="footer-title green-text">Empresa</header>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Sobre nós</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Contato</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Suporte</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Blog</a>
+        </nav>
+        <nav>
+            <header class="footer-title green-text">Legal</header>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Termos de uso</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Política de privacidade</a>
+            <a class="link link-hover text-gray-300 hover:text-green-400">Política de cookies</a>
+        </nav>
+    </footer>
+
+    <!-- Cart Modal -->
+    <dialog id="cart_modal" class="modal">
+        <div class="modal-box modal-custom w-11/12 max-w-2xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-white">✕</button>
+            </form>
+            <h3 class="font-bold text-lg mb-4 green-text">Carrinho de Compras</h3>
+            <div id="cart-content" class="space-y-4 mb-6">
+                <!-- Cart items will be populated here -->
+            </div>
+            <div class="divider"></div>
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-lg font-bold text-white">Total: </span>
+                <span class="text-2xl font-bold green-text" id="cart-total">R$ 0,00</span>
+            </div>
+            <div class="modal-action">
+                <button class="btn btn-outline text-white border-gray-500 hover:bg-gray-700" onclick="clearCart()">Limpar Carrinho</button>
+                <button class="btn green-bg text-white hover:bg-green-600" onclick="checkout()">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    Finalizar Compra
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        // Data Storage
+        let products = [
+            {
+                id: 'trabalhista',
+                name: 'Cálculos Trabalhistas',
+                description: 'Planilha completa para cálculos trabalhistas incluindo verbas rescisórias, horas extras, adicional noturno e muito mais.',
+                price: 89.90,
+                originalPrice: 129.90,
+                icon: 'fas fa-briefcase',
+                color: 'blue'
+            },
+            {
+                id: 'civel',
+                name: 'Cálculos Cíveis',
+                description: 'Ideal para cálculos de danos morais, materiais, correção monetária, juros e atualização de valores.',
+                price: 79.90,
+                originalPrice: 119.90,
+                icon: 'fas fa-gavel',
+                color: 'green'
+            },
+            {
+                id: 'fiscal',
+                name: 'Execução Fiscal',
+                description: 'Planilha especializada em cálculos de execução fiscal com multas, juros SELIC e correção monetária.',
+                price: 69.90,
+                originalPrice: 99.90,
+                icon: 'fas fa-university',
+                color: 'purple'
+            },
+            {
+                id: 'familia',
+                name: 'Direito de Família',
+                description: 'Cálculos de pensão alimentícia, partilha de bens, meação e outros cálculos do direito de família.',
+                price: 59.90,
+                originalPrice: 89.90,
+                icon: 'fas fa-heart',
+                color: 'red'
+            },
+            {
+                id: 'transito',
+                name: 'Acidentes de Trânsito',
+                description: 'Cálculos específicos para indenizações de acidentes de trânsito, lucros cessantes e danos emergentes.',
+                price: 49.90,
+                originalPrice: 79.90,
+                icon: 'fas fa-car',
+                color: 'yellow'
+            },
+            {
+                id: 'completo',
+                name: 'Pacote Completo',
+                description: 'Todas as planilhas em um pacote especial com desconto exclusivo. Ideal para escritórios que atuam em múltiplas áreas.',
+                price: 199.90,
+                originalPrice: 349.50,
+                icon: 'fas fa-crown',
+                color: 'indigo',
+                isSpecial: true
+            }
+        ];
+
+        let cart = [];
+        let editingProductId = null;
+
+        // Admin Panel Functions
+        function toggleAdminPanel() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('translate-x-full');
+            if (!panel.classList.contains('translate-x-full')) {
+                loadAdminData();
+            }
+        }
+
+        function loadAdminData() {
+            // Load hero section data
+            document.getElementById('hero-title').value = document.getElementById('hero-main-title').textContent;
+            document.getElementById('hero-subtitle').value = document.getElementById('hero-main-subtitle').textContent;
+            
+            // Load site config
+            document.getElementById('site-name').value = document.getElementById('site-title').textContent;
+            
+            // Load products list in admin
+            loadAdminProductsList();
+        }
+
+        function loadAdminProductsList() {
+            const container = document.getElementById('admin-products-list');
+            container.innerHTML = products.map(product => `
+                <div class="flex justify-between items-center p-2 bg-slate-700 rounded">
+                    <span class="text-sm text-white">${product.name}</span>
+                    <button onclick="editProduct('${product.id}')" class="btn btn-xs green-bg text-white">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateHeroSection() {
+            const title = document.getElementById('hero-title').value;
+            const subtitle = document.getElementById('hero-subtitle').value;
+            
+            document.getElementById('hero-main-title').textContent = title;
+            document.getElementById('hero-main-subtitle').textContent = subtitle;
+            
+            showToast('Seção Hero atualizada!', 'success');
+        }
+
+        function updateSiteConfig() {
+            const siteName = document.getElementById('site-name').value;
+            document.getElementById('site-title').textContent = siteName;
+            showToast('Configurações salvas!', 'success');
+        }
+
+        function openProductModal(productId = null) {
+            editingProductId = productId;
+            const modal = document.getElementById('product_modal');
+            
+            if (productId) {
+                const product = products.find(p => p.id === productId);
+                document.getElementById('product-name').value = product.name;
+                document.getElementById('product-price').value = product.price;
+                document.getElementById('product-original-price').value = product.originalPrice;
+                document.getElementById('product-description').value = product.description;
+                document.getElementById('product-icon').value = product.icon;
+                document.getElementById('product-color').value = product.color;
+                document.getElementById('delete-product-btn').style.display = 'block';
+            } else {
+                document.getElementById('product-name').value = '';
+                document.getElementById('product-price').value = '';
+                document.getElementById('product-original-price').value = '';
+                document.getElementById('product-description').value = '';
+                document.getElementById('product-icon').value = '';
+                document.getElementById('product-color').value = 'blue';
+                document.getElementById('delete-product-btn').style.display = 'none';
+            }
+            
+            modal.showModal();
+        }
+
+        function editProduct(productId) {
+            openProductModal(productId);
+        }
+
+        function saveProduct() {
+            const name = document.getElementById('product-name').value;
+            const price = parseFloat(document.getElementById('product-price').value);
+            const originalPrice = parseFloat(document.getElementById('product-original-price').value);
+            const description = document.getElementById('product-description').value;
+            const icon = document.getElementById('product-icon').value;
+            const color = document.getElementById('product-color').value;
+
+            if (!name || !price || !description) {
+                showToast('Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+
+            if (editingProductId) {
+                // Edit existing product
+                const productIndex = products.findIndex(p => p.id === editingProductId);
+                products[productIndex] = {
+                    ...products[productIndex],
+                    name,
+                    price,
+                    originalPrice,
+                    description,
+                    icon,
+                    color
+                };
+            } else {
+                // Add new product
+                const newId = 'product_' + Date.now();
+                products.push({
+                    id: newId,
+                    name,
+                    price,
+                    originalPrice,
+                    description,
+                    icon,
+                    color
+                });
+            }
+
+            renderProducts();
+            loadAdminProductsList();
+            document.getElementById('product_modal').close();
+            showToast('Produto salvo com sucesso!', 'success');
+        }
+
+        function deleteProduct() {
+            if (editingProductId && confirm('Tem certeza que deseja excluir este produto?')) {
+                products = products.filter(p => p.id !== editingProductId);
+                renderProducts();
+                loadAdminProductsList();
+                document.getElementById('product_modal').close();
+                showToast('Produto excluído!', 'success');
+            }
+        }
+
+        // Product Rendering
+        function renderProducts() {
+            const container = document.getElementById('products-grid');
+            container.innerHTML = products.map(product => {
+                const colorClasses = {
+                    blue: 'from-blue-400 to-blue-600',
+                    green: 'from-green-400 to-green-600',
+                    purple: 'from-purple-400 to-purple-600',
+                    red: 'from-red-400 to-red-600',
+                    yellow: 'from-yellow-400 to-yellow-600',
+                    indigo: 'from-indigo-400 to-indigo-600'
+                };
+
+                if (product.isSpecial) {
+                    return `
+                        <div class="card bg-gradient-to-br from-green-600 to-emerald-700 text-white shadow-xl card-hover">
+                            <div class="card-body">
+                                <div class="text-center mb-4">
+                                    <i class="${product.icon} text-4xl mb-2"></i>
+                                    <h3 class="card-title justify-center text-white">${product.name}</h3>
+                                    <div class="badge badge-warning">MAIS VENDIDO</div>
+                                </div>
+                                <p class="text-sm opacity-90 mb-4">${product.description}</p>
+                                <ul class="text-sm opacity-90 mb-4">
+                                    <li>✓ Todas as planilhas</li>
+                                    <li>✓ Suporte prioritário</li>
+                                    <li>✓ Atualizações gratuitas</li>
+                                    <li>✓ Bonus: Manual completo</li>
+                                </ul>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="text-2xl font-bold">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+                                        <span class="text-sm line-through opacity-70 ml-2">R$ ${product.originalPrice.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <button class="btn btn-warning" onclick="addToCart('${product.id}', ${product.price})">
+                                        <i class="fas fa-star mr-2"></i>
+                                        Comprar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card card-hover shadow-xl">
+                        <figure class="px-6 pt-6">
+                            <div class="w-full h-48 bg-gradient-to-br ${colorClasses[product.color]} rounded-xl flex items-center justify-center">
+                                <i class="${product.icon} text-6xl text-white"></i>
+                            </div>
+                        </figure>
+                        <div class="card-body">
+                            <h3 class="card-title text-white">${product.name}</h3>
+                            <p class="text-sm text-white mb-4">${product.description}</p>
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="badge green-bg text-white">Excel</div>
+                                <div class="badge badge-outline text-gray-300">Atualizada 2024</div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="text-2xl font-bold green-text">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+                                    <span class="text-sm line-through text-gray-400 ml-2">R$ ${product.originalPrice.toFixed(2).replace('.', ',')}</span>
+                                </div>
+                                <button class="btn green-bg text-white hover:bg-green-600" onclick="addToCart('${product.id}', ${product.price})">
+                                    <i class="fas fa-cart-plus mr-2"></i>
+                                    Comprar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Cart functionality
+        function addToCart(productId, price) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: product.name,
+                    price: price,
+                    quantity: 1
+                });
+            }
+            
+            updateCartUI();
+            showToast(`${product.name} adicionado ao carrinho!`);
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartUI();
+            updateCartModal();
+        }
+
+        function updateQuantity(productId, newQuantity) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity = Math.max(0, newQuantity);
+                if (item.quantity === 0) {
+                    removeFromCart(productId);
+                } else {
+                    updateCartUI();
+                    updateCartModal();
+                }
+            }
+        }
+
+        function updateCartUI() {
+            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+            document.getElementById('cart-count').textContent = cartCount;
+            document.getElementById('cart-items').textContent = `${cartCount} ${cartCount === 1 ? 'item' : 'itens'}`;
+        }
+
+        function openCartModal() {
+            updateCartModal();
+            document.getElementById('cart_modal').showModal();
+        }
+
+        function updateCartModal() {
+            const cartContent = document.getElementById('cart-content');
+            const cartTotal = document.getElementById('cart-total');
+            
+            if (cart.length === 0) {
+                cartContent.innerHTML = '<p class="text-center text-gray-400">Seu carrinho está vazio</p>';
+                cartTotal.textContent = 'R$ 0,00';
+                return;
+            }
+
+            cartContent.innerHTML = cart.map(item => `
+                <div class="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
+                    <div>
+                        <h4 class="font-semibold text-white">${item.name}</h4>
+                        <p class="text-sm text-gray-300">R$ ${item.price.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-sm btn-circle bg-slate-600 text-white hover:bg-slate-500" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                        <span class="w-8 text-center text-white">${item.quantity}</span>
+                        <button class="btn btn-sm btn-circle bg-slate-600 text-white hover:bg-slate-500" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                        <button class="btn btn-sm btn-error btn-circle ml-2" onclick="removeFromCart('${item.id}')">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cartTotal.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        }
+
+        function clearCart() {
+            cart = [];
+            updateCartUI();
+            updateCartModal();
+            showToast('Carrinho limpo!');
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                showToast('Seu carrinho está vazio!', 'error');
+                return;
+            }
+            
+            showToast('Redirecionando para pagamento...', 'success');
+            setTimeout(() => {
+                alert('Funcionalidade de pagamento seria implementada aqui!');
+            }, 1000);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            toast.className = `alert ${alertClass} fixed top-4 right-4 w-auto z-50 shadow-lg`;
+            toast.innerHTML = `
+                <div>
+                    <span class="text-white">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderProducts();
+            updateCartUI();
+        });
+    </script>
+</body>
+</html>
